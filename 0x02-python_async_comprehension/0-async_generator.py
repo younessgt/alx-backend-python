@@ -3,7 +3,10 @@
 
 import asyncio
 import random
-from typing import Generator
+from typing import Generator, AsyncGenerator
+# mypy inform that the return type hint should be
+# AsyncGenerator instead of Generator
+# But alx have another view
 
 
 async def async_generator() -> Generator[float, None, None]:
