@@ -2,8 +2,8 @@
 """A github org client
 """
 import unittest
-import client
 from unittest import mock
+from unittest.mock import PropertyMock
 from client import GithubOrgClient
 from parameterized import parameterized
 
@@ -23,14 +23,13 @@ class TestGithubOrgClient(unittest.TestCase):
             github_org_client = GithubOrgClient(org_name)
             self.assertEqual(github_org_client.org, test_payload)
 
-    @parameterized.expand([
-        ("google", {"repos_url": "http://google.com"}),
-    ])
-    def test_public_repos(self, org_name, test_payload):
+    def test_public_repos(self):
         """Test public_repos_url method of GithubOrgClient class."""
-
+        org_name = "google"
+        test_payload = {"repos_url": "http://google.com"}
         with mock.patch('client.GithubOrgClient.org',
-                        new_callable=mock.PropertyMock) as mock_get:
+                        new_callable=PropertyMock) as mock_get:
             mock_get.return_value = test_payload
             github_org_client = GithubOrgClient(org_name)
-            self.assertEqual(github_org_client._public_repos_url, "http://google.com")
+            self.assertEqual(github_org_client._public_repos_url,
+                             test_payload["repos_url"])
