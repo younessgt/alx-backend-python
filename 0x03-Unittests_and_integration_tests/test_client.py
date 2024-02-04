@@ -32,7 +32,7 @@ class TestGithubOrgClient(unittest.TestCase):
             github_org_client = GithubOrgClient(org_name)
             self.assertEqual(github_org_client._public_repos_url,
                              "http://google.com")
-            
+
     @patch('client.get_json')
     def test_public_repos(self, json_mock):
         """Test public_repos method of GithubOrgClient class."""
