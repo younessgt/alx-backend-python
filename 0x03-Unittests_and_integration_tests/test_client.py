@@ -86,6 +86,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         }
 
         def get_patcher(self, url):
+            """Get patcher method to mock requests.get."""
             x = Mock()
             x.json.return_value = dict_org_repo[url]
             return x
@@ -98,7 +99,7 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         self.assertEqual(github_org_client.public_repos(), self.expected_repos)
 
     def test_public_repos_with_license(self):
-        """Test public_repos method of GithubOrgClient class."""
+        """Test public_repos_with_license method of GithubOrgClient class."""
         github_org_client = GithubOrgClient("google")
         self.assertEqual(github_org_client.public_repos("apache-2.0"),
                          self.apache2_repos)
