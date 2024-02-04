@@ -24,7 +24,7 @@ class TestGithubOrgClient(unittest.TestCase):
             self.assertEqual(github_org_client.org, test_payload)
 
     @parameterized.expand([
-        ("google", {"repos_url": True}),
+        ("google", {"repos_url": "http://google.com"}),
     ])
     def test_public_repos(self, org_name, test_payload):
         """Test public_repos_url method of GithubOrgClient class."""
@@ -33,5 +33,4 @@ class TestGithubOrgClient(unittest.TestCase):
                         new_callable=mock.PropertyMock) as mock_get:
             mock_get.return_value = test_payload
             github_org_client = GithubOrgClient(org_name)
-            self.assertEqual(github_org_client._public_repos_url,
-                             test_payload['repos_url'])
+            self.assertEqual(github_org_client._public_repos_url, "http://google.com")
