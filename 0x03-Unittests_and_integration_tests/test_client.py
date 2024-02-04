@@ -2,11 +2,13 @@
 """A github org client
 """
 import unittest
+from typing import Dict
 from unittest import mock
-from unittest.mock import PropertyMock, patch, Mock
+from unittest.mock import PropertyMock, patch, Mock, MagicMock
 from client import GithubOrgClient
 from parameterized import parameterized, parameterized_class
 from fixtures import TEST_PAYLOAD
+from requests import HTTPError
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -16,7 +18,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google", {"payload": True}),
         ("abc", {"payload": False}),
     ])
-    def test_org(self, org_name, test_payload):
+    def test_org(self, org_name: str, test_payload: Dict) -> None:
         """Test org method of GithubOrgClient class."""
 
         with mock.patch('client.get_json') as mock_get:
@@ -24,7 +26,7 @@ class TestGithubOrgClient(unittest.TestCase):
             github_org_client = GithubOrgClient(org_name)
             self.assertEqual(github_org_client.org, test_payload)
 
-    def test_public_repos_url(self):
+    def test_public_repos_url(self) -> None:
         """Test public_repos_url method of GithubOrgClient class."""
         org_name = "google"
         test_payload = {"repos_url": "http://google.com"}
@@ -35,7 +37,7 @@ class TestGithubOrgClient(unittest.TestCase):
                              "http://google.com")
 
     @patch('client.get_json')
-    def test_public_repos(self, json_mock):
+    def test_public_repos(self, json_mock: MagicMock) -> None:
         """Test public_repos method of GithubOrgClient class."""
         names = [{"name": "name1", "license": {"key": "license1"}},
                  {"name": "name2", "license": {"key": "license2"}},
@@ -58,7 +60,8 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False)
     ])
-    def test_has_license(self, repo, licence, exp_value):
+    def test_has_license(self, repo: Dict,
+                         licence: str, exp_value: bool) -> None:
         """Test has_license method of GithubOrgClient class."""
         obj = GithubOrgClient("google")
         self.assertEqual(obj.has_license(repo, licence), exp_value)
@@ -78,33 +81,35 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     """ TestIntegrationGithubOrgClient class to test GithubOrgClient class."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         """Set up class."""
         dict_org_repo = {
             "https://api.github.com/orgs/google": cls.org_payload,
             "https://api.github.com/orgs/google/repos": cls.repos_payload,
         }
 
-        def get_patcher(self, url):
-            """Get patcher method to mock requests.get."""
-            x = Mock()
-            x.json.return_value = dict_org_repo[url]
-            return x
-        cls.get_patcher = patch('requests.get', side_effect=get_patcher)
+        def get_dict_payload(url):
+            """Get payload method """
+            if url in dict_org_repo:
+                x = Mock()
+                x.json.return_value = dict_org_repo[url]
+                return x
+            return HTTPError()
+        cls.get_patcher = patch('requests.get', side_effect=get_dict_payload)
         cls.get_patcher.start()
 
-    def test_public_repos(self):
+    def test_public_repos(self) -> None:
         """Test public_repos method of GithubOrgClient class."""
         github_org_client = GithubOrgClient("google")
         self.assertEqual(github_org_client.public_repos(), self.expected_repos)
 
-    def test_public_repos_with_license(self):
+    def test_public_repos_with_license(self) -> None:
         """Test public_repos_with_license method of GithubOrgClient class."""
         github_org_client = GithubOrgClient("google")
-        self.assertEqual(github_org_client.public_repos("apache-2.0"),
+        self.assertEqual(github_org_client.public_repos(licence="apache-2.0"),
                          self.apache2_repos)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         """Tear down class."""
         cls.get_patcher.stop()
