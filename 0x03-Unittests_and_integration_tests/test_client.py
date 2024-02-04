@@ -3,7 +3,7 @@
 """
 import unittest
 from unittest import mock
-from unittest.mock import PropertyMock
+from unittest.mock import PropertyMock, patch
 from client import GithubOrgClient
 from parameterized import parameterized
 
@@ -23,12 +23,32 @@ class TestGithubOrgClient(unittest.TestCase):
             github_org_client = GithubOrgClient(org_name)
             self.assertEqual(github_org_client.org, test_payload)
 
-    def test_public_repos(self):
+    def test_public_repos_url(self):
         """Test public_repos_url method of GithubOrgClient class."""
         org_name = "google"
         test_payload = {"repos_url": "http://google.com"}
-        with mock.patch('client.GithubOrgClient.org',
-                        PropertyMock(return_value=test_payload)):
+        with patch('client.GithubOrgClient.org',
+                   PropertyMock(return_value=test_payload)):
             github_org_client = GithubOrgClient(org_name)
             self.assertEqual(github_org_client._public_repos_url,
                              "http://google.com")
+            
+    @patch('client.get_json')
+    def test_public_repos(self, json_mock):
+        """Test public_repos method of GithubOrgClient class."""
+        names = [{"name": "name1", "license": {"key": "license1"}},
+                 {"name": "name2", "license": {"key": "license2"}},
+                 {"name": "name3"}]
+        json_mock.return_value = names
+        with mock.patch('client.GithubOrgClient._public_repos_url',
+                        PropertyMock(return_value="www.test.com")):
+            github_org_client = GithubOrgClient("google")
+            self.assertEqual(github_org_client.public_repos(),
+                             ["name1", "name2", "name3"])
+            self.assertEqual(github_org_client.public_repos("license1"),
+                             ["name1"])
+            self.assertEqual(github_org_client.public_repos("license2"),
+                             ["name2"])
+            self.assertEqual(github_org_client.public_repos("license3"),
+                             [])
+        json_mock.assert_called_once_with("www.test.com")
