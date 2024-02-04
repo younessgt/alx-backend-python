@@ -3,9 +3,10 @@
 """
 import unittest
 from unittest import mock
-from unittest.mock import PropertyMock, patch
+from unittest.mock import PropertyMock, patch, Mock
 from client import GithubOrgClient
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -61,3 +62,48 @@ class TestGithubOrgClient(unittest.TestCase):
         """Test has_license method of GithubOrgClient class."""
         obj = GithubOrgClient("google")
         self.assertEqual(obj.has_license(repo, licence), exp_value)
+
+
+@parameterized_class(
+    [
+        {
+            'org_payload': TEST_PAYLOAD[0][0],
+            'repos_payload': TEST_PAYLOAD[0][1],
+            'expected_repos': TEST_PAYLOAD[0][2],
+            'apache2_repos': TEST_PAYLOAD[0][3],
+        },
+    ]
+)
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """ TestIntegrationGithubOrgClient class to test GithubOrgClient class."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up class."""
+        dict_org_repo = {
+            "https://api.github.com/orgs/google": cls.org_payload,
+            "https://api.github.com/orgs/google/repos": cls.repos_payload,
+        }
+
+        def get_patcher(self, url):
+            x = Mock()
+            x.json.return_value = dict_org_repo[url]
+            return x
+        cls.get_patcher = patch('requests.get', side_effect=get_patcher)
+        cls.get_patcher.start()
+
+    def test_public_repos(self):
+        """Test public_repos method of GithubOrgClient class."""
+        github_org_client = GithubOrgClient("google")
+        self.assertEqual(github_org_client.public_repos(), self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """Test public_repos method of GithubOrgClient class."""
+        github_org_client = GithubOrgClient("google")
+        self.assertEqual(github_org_client.public_repos("apache-2.0"),
+                         self.apache2_repos)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Tear down class."""
+        cls.get_patcher.stop()
